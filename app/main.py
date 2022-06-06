@@ -5,6 +5,7 @@
 
 # # GET SONGS IN PLAYLIST
 from __future__ import unicode_literals
+import os
 from random import random
 from random import seed
 
@@ -16,7 +17,7 @@ import youtube_dl
 
 from youtubesearchpython import VideosSearch
 
-from flask import Flask, render_template, request, flash
+from flask import Flask, render_template, request, flash, send_file
 
 # %pip install pandas
 
@@ -99,9 +100,10 @@ def GenQueries(link):
 
 # # DOWNLOAD THE LINKS
 
-
 # %pip install youtube_dl
+
 def DownloadMusic(video_url):
+    os.mkdir("./spotify-2-mp3")
     video_info = youtube_dl.YoutubeDL().extract_info(
         url=video_url, download=False
     )
@@ -113,6 +115,15 @@ def DownloadMusic(video_url):
     }
 
     with youtube_dl.YoutubeDL(options) as ydl:
+        ydl_opts = {
+            'outtmpl': './spotify-2-mp3/%(title)s.%(ext)s',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+
+        }
         ydl.download([video_info['webpage_url']])
 
     print("Download complete... {}".format(filename))
@@ -128,6 +139,10 @@ app.config['SECRET_KEY'] = f'{random()}'
 
 @app.route('/')
 def home():
+    try:
+        os.rmdir("./spotify-2-mp3")
+    except Exception as e:
+        pass
     # flash('Songs are downloading, Be Patient')
     return render_template('home.html')
 
@@ -138,9 +153,11 @@ def genmp3():
     for url in links:
         file = DownloadMusic(url)
         print(url)
-        Flask.send_file(file, as_attachment=True)
-
-    return render_template('genmp3.html', titles=names),
+    if request.method == "POST":
+        result = send_file("./spotify-2-mp3", as_attachment=True)
+        return result
+    else:
+        return render_template('genmp3.html', titles=names),
 
 
 @app.errorhandler(Exception)
