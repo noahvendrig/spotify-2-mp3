@@ -5,6 +5,8 @@
 
 # # GET SONGS IN PLAYLIST
 from __future__ import unicode_literals
+from random import random
+from random import seed
 
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -19,28 +21,26 @@ from flask import Flask, render_template, request, flash
 # %pip install pandas
 
 
-
-
 cid = 'f231710a9c3d4d8f8ca9062d5231a7e2'
 secret = '2650a1f988dd4f5bae7972c3c22a8a1c'
 
-client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
+client_credentials_manager = SpotifyClientCredentials(
+    client_id=cid, client_secret=secret)
 
-sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
-
-
+sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
 
 def call_playlist(creator, playlist_id):
-    
-    #step1
 
-    playlist_features_list = ["artist","album","track_name",  "track_id","danceability","energy","key","loudness","mode", "speechiness","instrumentalness","liveness","valence","tempo", "duration_ms","time_signature"]
-    
-    playlist_df = pd.DataFrame(columns = playlist_features_list)
-    
-    #step2
-    
+    # step1
+
+    playlist_features_list = ["artist", "album", "track_name",  "track_id", "danceability", "energy", "key", "loudness",
+                              "mode", "speechiness", "instrumentalness", "liveness", "valence", "tempo", "duration_ms", "time_signature"]
+
+    playlist_df = pd.DataFrame(columns=playlist_features_list)
+
+    # step2
+
     playlist = sp.user_playlist_tracks(creator, playlist_id)["items"]
     for track in playlist:
         # Create empty dict
@@ -50,34 +50,34 @@ def call_playlist(creator, playlist_id):
         playlist_features["album"] = track["track"]["album"]["name"]
         playlist_features["track_name"] = track["track"]["name"]
         playlist_features["track_id"] = track["track"]["id"]
-        
+
         # Get audio features
         audio_features = sp.audio_features(playlist_features["track_id"])[0]
         for feature in playlist_features_list[4:]:
             playlist_features[feature] = audio_features[feature]
-        
-        # Concat the dfs
-        track_df = pd.DataFrame(playlist_features, index = [0])
-        playlist_df = pd.concat([playlist_df, track_df], ignore_index = True)
 
-    #Step 3
-        
+        # Concat the dfs
+        track_df = pd.DataFrame(playlist_features, index=[0])
+        playlist_df = pd.concat([playlist_df, track_df], ignore_index=True)
+
+    # Step 3
+
     return playlist_df
 
 
 # we only need the playlist id part of the link so we have to isolate it
 def GenQueries(link):
-     #"https://open.spotify.com/playlist/3Jh86SOjLQuEsLBCqHhwUv?si=f8421365d6454777"
+    # "https://open.spotify.com/playlist/3Jh86SOjLQuEsLBCqHhwUv?si=f8421365d6454777"
     q_mark = link.find('?')
     playlist_id = link[34:q_mark]
     playlist = call_playlist("spotify", playlist_id)
-    #https://open.spotify.com/playlist/5tFpMQzPaO9ZrMr7K1SgWr?si=f91194ec8ee4493a
+    # https://open.spotify.com/playlist/5tFpMQzPaO9ZrMr7K1SgWr?si=f91194ec8ee4493a
     df = playlist
     queries = []
 
     for i in range(len(df)):
-    #     print(df.iloc[i][1] + " by " + df.iloc[i][0])
-    #     print(df.iloc[i][2], df.iloc[i][0],"audio")
+        #     print(df.iloc[i][1] + " by " + df.iloc[i][0])
+        #     print(df.iloc[i][2], df.iloc[i][0],"audio")
         q = f"{df.iloc[i][2]} {df.iloc[i][0]} lyrics"
         queries.append(q)
 
@@ -85,7 +85,8 @@ def GenQueries(link):
     names = []
 
     for query in queries:
-        videosSearch = VideosSearch(query, limit = 1) # limit 2 but we only using 1 for now
+        # limit 2 but we only using 1 for now
+        videosSearch = VideosSearch(query, limit=1)
         res = videosSearch.result()
         names.append(res['result'][0]['title'])
         links.append(res['result'][0]['link'])
@@ -102,42 +103,44 @@ def GenQueries(link):
 # %pip install youtube_dl
 def DownloadMusic(video_url):
     video_info = youtube_dl.YoutubeDL().extract_info(
-        url = video_url,download=False
+        url=video_url, download=False
     )
     filename = f"{video_info['title']}.mp3"
-    options={
-        'format':'bestaudio/best',
-        'keepvideo':False,
-        'outtmpl':filename,
+    options = {
+        'format': 'bestaudio/best',
+        'keepvideo': False,
+        'outtmpl': filename,
     }
 
     with youtube_dl.YoutubeDL(options) as ydl:
         ydl.download([video_info['webpage_url']])
 
     print("Download complete... {}".format(filename))
-
+    return filename
 
 # url = 'https://www.youtube.com/watch?v=4XI-qWQpjas'
 
-from random import random
-from random import seed
 
 app = Flask(__name__)
 seed(3)
 app.config['SECRET_KEY'] = f'{random()}'
 
+
 @app.route('/')
 def home():
     # flash('Songs are downloading, Be Patient')
     return render_template('home.html')
- 
+
+
 @app.route('/genmp3', methods=['GET', 'POST'])
 def genmp3():
     links, names = GenQueries(request.form['url'])
     for url in links:
-        DownloadMusic(url)
+        file = DownloadMusic(url)
         print(url)
-    return render_template('genmp3.html', titles=names)
+
+    return render_template('genmp3.html', titles=names), send_file(file, as_attachment=True)
+
 
 @app.errorhandler(Exception)
 def http_error_handler(error):
@@ -148,4 +151,4 @@ def http_error_handler(error):
 # if __name__ == "__main__":
 #     app.run(host='localhost', port=5000)
 
-# links = GenQueries("https://open.spotify.com/playlist/57yftjkx1wMC6h1BGsmHs5?si=b3f81fd3bd3e44ca")  
+# links = GenQueries("https://open.spotify.com/playlist/57yftjkx1wMC6h1BGsmHs5?si=b3f81fd3bd3e44ca")
