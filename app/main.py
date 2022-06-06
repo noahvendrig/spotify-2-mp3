@@ -138,8 +138,9 @@ def genmp3():
     for url in links:
         file = DownloadMusic(url)
         print(url)
+        Flask.send_file(file, as_attachment=True)
 
-    return render_template('genmp3.html', titles=names), send_file(file, as_attachment=True)
+    return render_template('genmp3.html', titles=names),
 
 
 @app.errorhandler(Exception)
