@@ -14,6 +14,7 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import pandas as pd
 import youtube_dl
 
+import shutil
 
 from youtubesearchpython import VideosSearch
 
@@ -103,7 +104,7 @@ def GenQueries(link):
 # %pip install youtube_dl
 
 def DownloadMusic(video_url):
-    os.mkdir("./spotify-2-mp3")
+    
     video_info = youtube_dl.YoutubeDL().extract_info(
         url=video_url, download=False
     )
@@ -111,7 +112,7 @@ def DownloadMusic(video_url):
     options = {
         'format': 'bestaudio/best',
         'keepvideo': False,
-        'outtmpl': filename,
+        'outtmpl': "./spotify-2-mp3/"+filename,
     }
 
     with youtube_dl.YoutubeDL(options) as ydl:
@@ -130,7 +131,11 @@ def DownloadMusic(video_url):
     return filename
 
 # url = 'https://www.youtube.com/watch?v=4XI-qWQpjas'
-
+   
+def ClearFolders():
+    if os.path.isfile("./spotify-2-mp3.zip"):
+        os.remove("./spotify-2-mp3.zip")
+        print("removed old zip")
 
 app = Flask(__name__)
 seed(3)
@@ -146,18 +151,22 @@ def home():
     # flash('Songs are downloading, Be Patient')
     return render_template('home.html')
 
-
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/genmp3', methods=['GET', 'POST'])
 def genmp3():
     links, names = GenQueries(request.form['url'])
+    ClearFolders()
     for url in links:
         file = DownloadMusic(url)
-        print(url)
+        # send_file(file, as_attachment=True)
+        # print(url)
+    print("ALL DOWNLOADS COMPLETE")
     if request.method == "POST":
-        result = send_file("./spotify-2-mp3", as_attachment=True)
-        return result
+        #result =  send_file("spotify-2-mp3", as_attachment=True) # need to return send file
+        # make_archive('./spotify-2-mp3/', './spotify-2-mp3.zip')
+        shutil.make_archive("spotify-2-mp3", 'zip', "./spotify-2-mp3/")
+        return send_file("./spotify-2-mp3.zip", as_attachment=True)
     else:
-        return render_template('genmp3.html', titles=names),
+        return render_template('genmp3', titles=names),
 
 
 @app.errorhandler(Exception)
@@ -166,7 +175,9 @@ def http_error_handler(error):
     return render_template("home.html")
 
 
+
 if __name__ == "__main__":
-    app.run(host='localhost', port=5000, debug=True)
+    ClearFolders()
+    app.run(host='localhost', port=5000)#, debug=True)
 
 # links = GenQueries("https://open.spotify.com/playlist/57yftjkx1wMC6h1BGsmHs5?si=b3f81fd3bd3e44ca")
