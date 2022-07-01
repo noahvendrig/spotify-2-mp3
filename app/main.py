@@ -147,7 +147,7 @@ def home():
     return render_template('home.html')
 
 
-@app.route('/genmp3', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def genmp3():
     links, names = GenQueries(request.form['url'])
     for url in links:
@@ -166,7 +166,7 @@ def http_error_handler(error):
     return render_template("home.html")
 
 
-# if __name__ == "__main__":
-#     app.run(host='localhost', port=5000)
+if __name__ == "__main__":
+    app.run(host='localhost', port=5000, debug=True)
 
 # links = GenQueries("https://open.spotify.com/playlist/57yftjkx1wMC6h1BGsmHs5?si=b3f81fd3bd3e44ca")
