@@ -18,9 +18,9 @@ import shutil
 
 from youtubesearchpython import VideosSearch
 
-from flask import Flask, render_template, request, flash, send_file
+from flask import Flask, render_template, request, flash, send_file, redirect, url_for
 
-# %pip install pandas
+# pip install flask pandas youtube-search-python youtube_dl spotipy
 
 
 cid = 'f231710a9c3d4d8f8ca9062d5231a7e2'
@@ -135,7 +135,11 @@ def DownloadMusic(video_url):
 def ClearFolders():
     if os.path.isfile("./spotify-2-mp3.zip"):
         os.remove("./spotify-2-mp3.zip")
-        print("removed old zip")
+
+    if os.path.isdir("./spotify-2-mp3"):
+        shutil.rmtree("./spotify-2-mp3")
+        os.mkdir("./spotify-2-mp3")
+
 
 app = Flask(__name__)
 seed(3)
@@ -153,8 +157,15 @@ def home():
 
 @app.route('/genmp3', methods=['GET', 'POST'])
 def genmp3():
-    links, names = GenQueries(request.form['url'])
+    try:
+        links, names = GenQueries(request.form['url'])
+    except Exception as e:
+        flash('Invalid URL')
+        print("Incorrect Playlist url used")
+        return redirect(url_for('home'))
+    
     ClearFolders()
+
     for url in links:
         file = DownloadMusic(url)
         # send_file(file, as_attachment=True)
@@ -166,7 +177,7 @@ def genmp3():
         shutil.make_archive("spotify-2-mp3", 'zip', "./spotify-2-mp3/")
         return send_file("./spotify-2-mp3.zip", as_attachment=True)
     else:
-        return render_template('genmp3', titles=names),
+        return render_template('home', titles=names),
 
 
 @app.errorhandler(Exception)
@@ -175,9 +186,8 @@ def http_error_handler(error):
     return render_template("home.html")
 
 
-
 if __name__ == "__main__":
     ClearFolders()
-    app.run(host='localhost', port=5000)#, debug=True)
+    app.run(host='localhost', port=5000, debug=True)
 
 # links = GenQueries("https://open.spotify.com/playlist/57yftjkx1wMC6h1BGsmHs5?si=b3f81fd3bd3e44ca")
