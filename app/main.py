@@ -115,12 +115,12 @@ def DownloadMusic(video_url):
     options = {
         'format': 'bestaudio/best',
         'keepvideo': False,
-        'outtmpl': "./spotify-2-mp3/"+filename,
+        'outtmpl': "spotify-2-mp3/"+filename,
     }
 
     with youtube_dl.YoutubeDL(options) as ydl:
         ydl_opts = {
-            'outtmpl': './spotify-2-mp3/%(title)s.%(ext)s',
+            'outtmpl': 'spotify-2-mp3/%(title)s.%(ext)s',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
@@ -136,12 +136,12 @@ def DownloadMusic(video_url):
 # url = 'https://www.youtube.com/watch?v=4XI-qWQpjas'
    
 def ClearFolders():
-    if os.path.isfile("./spotify-2-mp3.zip"):
-        os.remove("./spotify-2-mp3.zip")
+    if os.path.isfile("spotify-2-mp3.zip"):
+        os.remove("spotify-2-mp3.zip")
 
-    if os.path.isdir("./spotify-2-mp3"):
-        shutil.rmtree("./spotify-2-mp3")
-        os.mkdir("./spotify-2-mp3")
+    if os.path.isdir("spotify-2-mp3"):
+        shutil.rmtree("spotify-2-mp3")
+        os.mkdir("spotify-2-mp3")
 
 
 app = Flask(__name__)
@@ -152,7 +152,7 @@ app.config['SECRET_KEY'] = f'{random()}'
 @app.route('/')
 def home():
     try:
-        os.rmdir("./spotify-2-mp3")
+        os.rmdir("spotify-2-mp3")
     except Exception as e:
         pass
     # flash('Songs are downloading, Be Patient')
@@ -179,10 +179,10 @@ def genmp3():
     print("ALL DOWNLOADS COMPLETE")
     if request.method == "POST":
         #result =  send_file("spotify-2-mp3", as_attachment=True) # need to return send file
-        # make_archive('./spotify-2-mp3/', './spotify-2-mp3.zip')
-        shutil.make_archive("spotify-2-mp3", 'zip', "./spotify-2-mp3/")
+        # make_archive('spotify-2-mp3/', 'spotify-2-mp3.zip')
+        shutil.make_archive("spotify-2-mp3", 'zip', "spotify-2-mp3")
         print("Downloading zip...")
-        return send_file("../spotify-2-mp3.zip", as_attachment=True)
+        return send_file("..\spotify-2-mp3.zip", as_attachment=True)
     else:
         return render_template('home', titles=names),
 
