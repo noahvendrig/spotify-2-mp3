@@ -20,8 +20,11 @@ from youtubesearchpython import VideosSearch
 
 from flask import Flask, render_template, request, flash, send_file, redirect, url_for
 
-# pip install flask pandas youtube-search-python youtube_dl spotipy
+from waitress import serve, logging
 
+# pip install flask pandas youtube-search-python youtube_dl spotipy
+logger = logging.getLogger('waitress')
+logger.setLevel(logging.INFO)
 
 cid = 'f231710a9c3d4d8f8ca9062d5231a7e2'
 secret = '2650a1f988dd4f5bae7972c3c22a8a1c'
@@ -167,7 +170,10 @@ def genmp3():
     ClearFolders()
 
     for url in links:
-        file = DownloadMusic(url)
+        try:    
+            DownloadMusic(url)
+        except Exception as e:
+            pass
         # send_file(file, as_attachment=True)
         # print(url)
     print("ALL DOWNLOADS COMPLETE")
@@ -175,7 +181,8 @@ def genmp3():
         #result =  send_file("spotify-2-mp3", as_attachment=True) # need to return send file
         # make_archive('./spotify-2-mp3/', './spotify-2-mp3.zip')
         shutil.make_archive("spotify-2-mp3", 'zip', "./spotify-2-mp3/")
-        return send_file("./spotify-2-mp3.zip", as_attachment=True)
+        print("Downloading zip...")
+        return send_file("../spotify-2-mp3.zip", as_attachment=True)
     else:
         return render_template('home', titles=names),
 
@@ -186,8 +193,8 @@ def http_error_handler(error):
     return render_template("home.html")
 
 
-if __name__ == "__main__":
+def Launch():
     ClearFolders()
-    app.run(host='localhost', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
 
 # links = GenQueries("https://open.spotify.com/playlist/57yftjkx1wMC6h1BGsmHs5?si=b3f81fd3bd3e44ca")
