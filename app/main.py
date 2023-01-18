@@ -18,6 +18,10 @@ import shutil
 
 from youtubesearchpython import VideosSearch
 
+import os, io
+import webbrowser
+from urllib.request import urlopen
+
 from flask import Flask, render_template, request, flash, send_file, redirect, url_for
 
 from waitress import serve, logging
@@ -76,7 +80,7 @@ def GenQueries(link):
     q_mark = link.find('?')
     playlist_id = link[34:q_mark]
     playlist = call_playlist("spotify", playlist_id)
-    # https://open.spotify.com/playlist/5tFpMQzPaO9ZrMr7K1SgWr?si=f91194ec8ee4493a
+
     df = playlist
     queries = []
 
@@ -91,10 +95,13 @@ def GenQueries(link):
 
     for query in queries:
         # limit 2 but we only using 1 for now
-        videosSearch = VideosSearch(query, limit=1)
-        res = videosSearch.result()
-        names.append(res['result'][0]['title'])
-        links.append(res['result'][0]['link'])
+        try:
+            videosSearch = VideosSearch(query, limit=1)
+            res = videosSearch.result()
+            names.append(res['result'][0]['title'])
+            links.append(res['result'][0]['link'])
+        except:
+            pass
     return links, names
 
 
@@ -116,6 +123,7 @@ def DownloadMusic(video_url):
         'format': 'bestaudio/best',
         'keepvideo': False,
         'outtmpl': "spotify-2-mp3/"+filename,
+        'quiet': True
     }
 
     with youtube_dl.YoutubeDL(options) as ydl:
@@ -126,11 +134,12 @@ def DownloadMusic(video_url):
                 'preferredcodec': 'mp3',
                 'preferredquality': '192',
             }],
+            'quiet': True,
 
         }
-        ydl.download([video_info['webpage_url']])
+        # ydl.download([video_info['webpage_url']])
 
-    print("Download complete... {}".format(filename))
+    # print("Download complete... {}".format(filename))
     return filename
 
 # url = 'https://www.youtube.com/watch?v=4XI-qWQpjas'
@@ -143,6 +152,37 @@ def ClearFolders():
         shutil.rmtree("spotify-2-mp3")
         os.mkdir("spotify-2-mp3")
 
+def ReadMultipleDataFrom(thisTextFile, thisPattern, file):
+    inputData = []
+
+    for iLine in file:
+        if iLine.startswith(thisPattern):
+            iLine = iLine.rstrip()
+            # print iLine
+        if ('v=') in iLine: # https://www.youtube.com/watch?v=aBcDeFGH
+            iLink = iLine.split('v=')[1]
+            inputData.append(iLink) 
+        if ('be/') in iLine: # https://youtu.be/aBcDeFGH
+            iLink =  iLine.split('be/')[1]
+            inputData.append(iLink)
+    return inputData
+
+def gen_yt_playlist(links):
+    inputFileName = links
+
+    videoLinks =  ReadMultipleDataFrom(inputFileName, "https", links)
+
+    short_links = [videoLinks[i:i + 50] for i in range(0, len(videoLinks), 50)]
+    for l in short_links:
+        listOfVideos = "http://www.youtube.com/watch_videos?video_ids=" + ','.join(l)
+        response = urlopen(listOfVideos)
+        playListLink = response.geturl()
+        playListLink = playListLink.split('list=')[1]
+        playListURL = "https://www.youtube.com/playlist?list="+playListLink+"&disable_polymer=true"
+        webbrowser.open(playListURL)
+        print(playListURL)
+    return playListURL #kinda useless atm
+    
 
 app = Flask(__name__)
 seed(3)
@@ -155,8 +195,7 @@ def home():
         os.rmdir("spotify-2-mp3")
     except Exception as e:
         pass
-    # flash('Songs are downloading, Be Patient')
-    return render_template('home.html')
+    return render_template('home.html',)
 
 @app.route('/genmp3', methods=['GET', 'POST'])
 def genmp3():
@@ -167,8 +206,14 @@ def genmp3():
         print("Incorrect Playlist url used")
         return redirect(url_for('home'))
     
+    # return redirect(url_for('home'))
     ClearFolders()
-
+    print("Starting")
+    short_pure_links = [links[i:i + 100] for i in range(0, len(links), 100)]
+    print(len(short_pure_links))
+    for s in short_pure_links:
+        playlist_url = gen_yt_playlist(s)
+    
     for url in links:
         try:    
             DownloadMusic(url)
@@ -184,7 +229,7 @@ def genmp3():
         print("Downloading zip...")
         return send_file("..\spotify-2-mp3.zip", as_attachment=True)
     else:
-        return render_template('home', titles=names),
+        return render_template('genmp3.html', titles=names, playlist_url=playlist_url),
 
 
 @app.errorhandler(Exception)

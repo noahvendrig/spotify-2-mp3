@@ -16,6 +16,11 @@
             <div class="link-entry">Spotify Playlist Link:</div> <input name="url">
             <input type="submit" value="Submit">
         </form>
+        {% if playlist_url %}
+        <p id="playlist">{{ playlist_url }}</p>
+        {% endif %}
+        <p id="playlist">{{ playlist_url }}</p>
+        <!-- <div class="playlist"></div> -->
     </div>
     
 
