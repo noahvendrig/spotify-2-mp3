@@ -137,7 +137,7 @@ def DownloadMusic(video_url):
             'quiet': True,
 
         }
-        # ydl.download([video_info['webpage_url']])
+        ydl.download([video_info['webpage_url']])
 
     # print("Download complete... {}".format(filename))
     return filename
@@ -210,7 +210,7 @@ def genmp3():
     ClearFolders()
     print("Starting")
     short_pure_links = [links[i:i + 100] for i in range(0, len(links), 100)]
-    print(len(short_pure_links))
+
     for s in short_pure_links:
         playlist_url = gen_yt_playlist(s)
     
