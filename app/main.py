@@ -12,7 +12,8 @@ from random import seed
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import pandas as pd
-import youtube_dl
+# from youtube_dl import YoutubeDL
+from yt_dlp import YoutubeDL
 
 import shutil
 
@@ -111,11 +112,10 @@ def GenQueries(link):
 
 # # DOWNLOAD THE LINKS
 
-# %pip install youtube_dl
 
 def DownloadMusic(video_url):
     
-    video_info = youtube_dl.YoutubeDL().extract_info(
+    video_info = YoutubeDL().extract_info(
         url=video_url, download=False
     )
     filename = f"{video_info['title']}.mp3"
@@ -126,7 +126,7 @@ def DownloadMusic(video_url):
         'quiet': True
     }
 
-    with youtube_dl.YoutubeDL(options) as ydl:
+    with YoutubeDL(options) as ydl:
         ydl_opts = {
             'outtmpl': 'spotify-2-mp3/%(title)s.%(ext)s',
             'postprocessors': [{
@@ -141,8 +141,6 @@ def DownloadMusic(video_url):
 
     # print("Download complete... {}".format(filename))
     return filename
-
-# url = 'https://www.youtube.com/watch?v=4XI-qWQpjas'
    
 def ClearFolders():
     if os.path.isfile("spotify-2-mp3.zip"):
@@ -158,11 +156,10 @@ def ReadMultipleDataFrom(thisTextFile, thisPattern, file):
     for iLine in file:
         if iLine.startswith(thisPattern):
             iLine = iLine.rstrip()
-            # print iLine
-        if ('v=') in iLine: # https://www.youtube.com/watch?v=aBcDeFGH
+        if ('v=') in iLine:
             iLink = iLine.split('v=')[1]
             inputData.append(iLink) 
-        if ('be/') in iLine: # https://youtu.be/aBcDeFGH
+        if ('be/') in iLine:
             iLink =  iLine.split('be/')[1]
             inputData.append(iLink)
     return inputData
@@ -179,7 +176,7 @@ def gen_yt_playlist(links):
         playListLink = response.geturl()
         playListLink = playListLink.split('list=')[1]
         playListURL = "https://www.youtube.com/playlist?list="+playListLink+"&disable_polymer=true"
-        webbrowser.open(playListURL)
+        # webbrowser.open(playListURL) # display the youtube playlist
         print(playListURL)
     return playListURL #kinda useless atm
     
@@ -196,6 +193,13 @@ def home():
     except Exception as e:
         pass
     return render_template('home.html',)
+
+@app.route('/download')
+def downloadFile ():
+    #For windows you need to use drive name [ex: F:/Example.pdf]
+    path = "/spotify-2-mp3.zip"
+    print("sending to /donwload")
+    return send_file(path, as_attachment=True)
 
 @app.route('/genmp3', methods=['GET', 'POST'])
 def genmp3():
@@ -226,10 +230,16 @@ def genmp3():
         #result =  send_file("spotify-2-mp3", as_attachment=True) # need to return send file
         # make_archive('spotify-2-mp3/', 'spotify-2-mp3.zip')
         shutil.make_archive("spotify-2-mp3", 'zip', "spotify-2-mp3")
-        print("Downloading zip...")
-        return send_file("..\spotify-2-mp3.zip", as_attachment=True)
+        print("Created zip...")
+        # res = send_file("../spotify-2-mp3.zip", as_attachment=True)
+        res = send_file("C:/Users/elect\Github/spotify-2-mp3/spotify-2-mp3.zip", as_attachment=True)
+        print("Downloaded zip...")
+        os.remove("C:/Users/elect\Github/spotify-2-mp3/spotify-2-mp3.zip")
+        os.remove("C:/Users/elect\Github/spotify-2-mp3/spotify-2-mp3")
+        # return res
+        return render_template('download.html')
     else:
-        return render_template('genmp3.html', titles=names, playlist_url=playlist_url),
+        return render_template('genmp3.html', titles=names, playlist_url=playlist_url)
 
 
 @app.errorhandler(Exception)
