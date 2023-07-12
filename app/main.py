@@ -27,12 +27,15 @@ from flask import Flask, render_template, request, flash, send_file, redirect, u
 
 from waitress import serve, logging
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # pip install flask pandas youtube-search-python youtube_dl spotipy
 logger = logging.getLogger('waitress')
 logger.setLevel(logging.INFO)
 
 cid = 'f231710a9c3d4d8f8ca9062d5231a7e2'
-secret = '2650a1f988dd4f5bae7972c3c22a8a1c'
+secret = os.environ.get('SECRET_KEY')
 
 client_credentials_manager = SpotifyClientCredentials(
     client_id=cid, client_secret=secret)
