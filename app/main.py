@@ -198,10 +198,10 @@ def home():
     return render_template('home.html',)
 
 @app.route('/download')
-def downloadFile ():
+def download():
     #For windows you need to use drive name [ex: F:/Example.pdf]
-    path = "/spotify-2-mp3.zip"
-    print("sending to /donwload")
+    path = "../spotify-2-mp3.zip"
+    print("downloading in /download")
     return send_file(path, as_attachment=True)
 
 @app.route('/genmp3', methods=['GET', 'POST'])
@@ -235,12 +235,13 @@ def genmp3():
         shutil.make_archive("spotify-2-mp3", 'zip', "spotify-2-mp3")
         print("Created zip...")
         # res = send_file("../spotify-2-mp3.zip", as_attachment=True)
-        res = send_file("C:/Users/elect\Github/spotify-2-mp3/spotify-2-mp3.zip", as_attachment=True)
-        print("Downloaded zip...")
-        os.remove("C:/Users/elect\Github/spotify-2-mp3/spotify-2-mp3.zip")
-        os.remove("C:/Users/elect\Github/spotify-2-mp3/spotify-2-mp3")
+        # res = send_file("C:/Users/elect\Github/spotify-2-mp3/spotify-2-mp3.zip", as_attachment=True)
+        # os.remove("C:/Users/elect\Github/spotify-2-mp3/spotify-2-mp3.zip")
+        # os.remove("C:/Users/elect\Github/spotify-2-mp3/spotify-2-mp3")
         # return res
-        return render_template('download.html')
+        # return render_template('download.html')
+        # return send_file("spotify-2-mp3", as_attachment=True)
+        return render_template('download.html', titles=names, playlist_url=playlist_url)
     else:
         return render_template('genmp3.html', titles=names, playlist_url=playlist_url)
 
@@ -251,8 +252,10 @@ def http_error_handler(error):
     return render_template("home.html")
 
 
-def Launch():
+def Launch(): # for local only
     ClearFolders()
     app.run(host='0.0.0.0', port=5000, debug=False)
+
+
 
 # links = GenQueries("https://open.spotify.com/playlist/57yftjkx1wMC6h1BGsmHs5?si=b3f81fd3bd3e44ca")
