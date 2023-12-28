@@ -16,3 +16,14 @@ footer {
 .link-entry{
     margin-top: 30px;
 }
+
+.btn {
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+img {
+    margin-top: 30px;
+    width: 30%;
+    height: auto;
+}

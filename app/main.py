@@ -44,7 +44,8 @@ sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
 
 def call_playlist(creator, playlist_id):
-
+    # print("PLAYLIST OCVER IMAGE:",sp.playlist_cover_image(playlist_id))
+    
     # step1
 
     playlist_features_list = ["artist", "album", "track_name",  "track_id", "danceability", "energy", "key", "loudness",
@@ -69,11 +70,11 @@ def call_playlist(creator, playlist_id):
         for feature in playlist_features_list[4:]:
             playlist_features[feature] = audio_features[feature]
 
-        # Concat the dfs
+        # concat the dfs
         track_df = pd.DataFrame(playlist_features, index=[0])
         playlist_df = pd.concat([playlist_df, track_df], ignore_index=True)
 
-    # Step 3
+    # step 3
 
     return playlist_df
 
@@ -84,6 +85,7 @@ def GenQueries(link):
     q_mark = link.find('?')
     playlist_id = link[34:q_mark]
     playlist = call_playlist("spotify", playlist_id)
+    playlist_cover_image_src = sp.playlist_cover_image(playlist_id)
 
     df = playlist
     queries = []
@@ -106,7 +108,7 @@ def GenQueries(link):
             links.append(res['result'][0]['link'])
         except:
             pass
-    return links, names
+    return links, names, playlist_cover_image_src
 
 
 # print(res)
@@ -187,7 +189,7 @@ def gen_yt_playlist(links):
 app = Flask(__name__)
 seed(3)
 app.config['SECRET_KEY'] = f'{random()}'
-
+app.config["CACHE_TYPE"] = "null"
 
 @app.route('/')
 def home():
@@ -204,10 +206,14 @@ def download():
     print("downloading in /download")
     return send_file(path, as_attachment=True)
 
-@app.route('/genmp3', methods=['GET', 'POST'])
-def genmp3():
+@app.route('/generate', methods=['GET', 'POST'])
+def generate():
+    playlist_cover_image_src = ""
     try:
-        links, names = GenQueries(request.form['url'])
+        links, names, playlist_cover_image = GenQueries(request.form['url'])
+        playlist_cover_image_src = playlist_cover_image[0]['url']
+        print(playlist_cover_image_src)
+
     except Exception as e:
         flash('Invalid URL')
         print("Incorrect Playlist url used")
@@ -241,9 +247,10 @@ def genmp3():
         # return res
         # return render_template('download.html')
         # return send_file("spotify-2-mp3", as_attachment=True)
-        return render_template('download.html', titles=names, playlist_url=playlist_url)
+        return render_template('download.html', titles=names, playlist_url=playlist_url, playlist_cover_image_src=playlist_cover_image_src)
     else:
-        return render_template('genmp3.html', titles=names, playlist_url=playlist_url)
+        print(playlist_cover_image_src)
+        return render_template('generate.html', titles=names, playlist_url=playlist_url, playlist_cover_image_src=playlist_cover_image_src)
 
 
 @app.errorhandler(Exception)
@@ -255,7 +262,7 @@ def http_error_handler(error):
 def Launch(): # for local only
     ClearFolders()
     app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(debug=True, port=os.getenv("PORT", default=5000))
 
 
-
-# links = GenQueries("https://open.spotify.com/playlist/57yftjkx1wMC6h1BGsmHs5?si=b3f81fd3bd3e44ca")
+# links = GenQueries("https://open.spotify.com/playlist/3fp1SB3BHSGTn7UehTftQI?si=769d7743d40145dd")

@@ -12,6 +12,10 @@
         <h1>Your files are ready for download!</h1>
 
         <a class="btn btn-primary" href="{{url_for('download')}}">Download</a>
+        {% if playlist_cover_image_src != "" %}
+            <br>
+            <img id="playlist_cover_image" src="{{ playlist_cover_image_src }}"/>
+        {% endif %}
     </div>
 </body>
 </html>
